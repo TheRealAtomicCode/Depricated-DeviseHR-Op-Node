@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model absence_types {
+  id                                             Int        @id @default(autoincrement())
+  absence_name                                   String     @db.VarChar(60)
+  absences_absences_absence_typesToabsence_types absences[] @relation("absences_absence_typesToabsence_types")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model absences {
+  id                                                  Int           @id @default(autoincrement())
+  user_id                                             Int
+  company_id                                          Int
+  contract_id                                         Int
+  start_date                                          DateTime      @db.Date
+  end_date                                            DateTime      @db.Date
+  is_first_half_day                                   Boolean?
+  leave_is_in_days                                    Boolean       @default(true)
+  start_time                                          DateTime      @db.Time(6)
+  end_time                                            DateTime      @db.Time(6)
+  days_deducted                                       Int?
+  hours_deducted                                      Int?
+  absence_types                                       Int
+  comments                                            String?       @db.VarChar(255)
+  approved                                            Int?
+  approved_by_admin                                   Int?
+  added_by                                            Int
+  updated_by                                          Int?
+  created_at                                          DateTime      @default(now()) @db.Timestamp(6)
+  updated_at                                          DateTime      @default(now()) @db.Timestamp(6)
+  absence_types_absences_absence_typesToabsence_types absence_types @relation("absences_absence_typesToabsence_types", fields: [absence_types], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_absence_type")
+  companies                                           companies     @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_company")
+  contracts                                           contracts     @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract")
+  users                                               users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user")
+}
+
+model companies {
+  id                                           Int                @id @default(autoincrement())
+  name                                         String             @db.VarChar(60)
+  licence_number                               String             @db.VarChar(255)
+  account_number                               String             @unique @db.VarChar(6)
+  annual_leave_start_date                      DateTime?          @default(dbgenerated("'1970-01-01'::date")) @db.Date
+  logo                                         String?
+  enable_semi_personal_information             Boolean            @default(false)
+  enable_show_employees                        Boolean            @default(false)
+  enable_toil                                  Boolean            @default(false)
+  enable_overtime                              Boolean            @default(false)
+  enable_absence_conflicts_outside_departments Boolean            @default(false)
+  enable_carryover                             Boolean            @default(false)
+  enable_self_cancel_leave_requests            Boolean            @default(false)
+  enable_edit_my_information                   Boolean            @default(false)
+  enable_accept_decline_shifts                 Boolean            @default(false)
+  enable_takeover_shift                        Boolean            @default(false)
+  enable_broadcast_shift_swap                  Boolean            @default(false)
+  enable_require_two_stage_approval            Boolean            @default(false)
+  lang                                         String?            @db.VarChar(5)
+  country                                      String?            @db.VarChar(5)
+  main_contact_id                              Int?
+  created_at                                   DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime           @default(now()) @db.Timestamp(6)
+  is_special_client                            Boolean            @default(false)
+  max_users_allowed                            Int
+  security_question_one                        String?            @db.VarChar(60)
+  security_question_two                        String?            @db.VarChar(60)
+  security_answer_two                          String?            @db.VarChar(60)
+  expiration_date                              DateTime           @db.Timestamp(6)
+  phone_number                                 String             @db.VarChar(14)
+  added_by_operator                            Int
+  updated_by_operator                          Int?
+  absences                                     absences[]
+  contracts                                    contracts[]
+  roles                                        roles[]
+  terms                                        terms[]
+  users                                        users[]
+  working_patterns                             working_patterns[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contracts {
+  id                                           Int        @id @default(autoincrement())
+  user_id                                      Int
+  company_id                                   Int
+  pattern_id                                   Int?
+  created_at                                   DateTime   @default(now()) @db.Timestamp(6)
+  updated_at                                   DateTime   @default(now()) @db.Timestamp(6)
+  added_by                                     Int
+  updated_by                                   Int?
+  contract_type                                Int
+  start_date                                   DateTime   @db.Date
+  end_date                                     DateTime?  @db.Date
+  contracted_working_hours_per_week_in_minutes Int        @default(480)
+  full_time_working_hours_per_week_in_minutes  Int
+  contracted_working_days_per_week             Int        @default(0)
+  average_working_day                          Int        @default(480)
+  is_leave_in_days                             Boolean    @default(true)
+  companies_full_time_annual_leave_entitlement Int        @default(0)
+  contracted_annual_leave_entitlement          Int        @default(0)
+  this_years_annual_leave_allowence            Int        @default(0)
+  term_time_id                                 Int?
+  discarded_id                                 Int?
+  discarded_xnumber                            Int?
+  absences                                     absences[]
+  companies                                    companies  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                        users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model discarded_contracts {
+  id                        Int      @id @default(autoincrement())
+  user_id                   Int
+  company_id                Int
+  discard_reason            String   @db.VarChar(255)
+  discard_at                DateTime @default(now()) @db.Timestamp(6)
+  discard_by                Int
+  first_contract_start_date DateTime @db.Date
+  last_contract_end_date    DateTime @db.Date
+  first_contract_id         Int
+  last_contract_id          Int
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model hierarchies {
+  manager_id                              Int
+  subordinate_id                          Int
+  users_hierarchies_manager_idTousers     users @relation("hierarchies_manager_idTousers", fields: [manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_manager")
+  users_hierarchies_subordinate_idTousers users @relation("hierarchies_subordinate_idTousers", fields: [subordinate_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_subordinate")
+
+  @@id([manager_id, subordinate_id], map: "pk_hierarchies")
+}
+
+model notes {
+  id          Int        @id @default(autoincrement())
+  operatorid  Int?
+  companyid   Int?
+  notecontent String?
+  createdat   DateTime   @default(now()) @db.Timestamp(6)
+  operators   operators? @relation(fields: [operatorid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model operators {
+  id                  Int       @id @default(autoincrement())
+  first_name          String    @db.VarChar(20)
+  last_name           String    @db.VarChar(20)
+  email               String    @unique @db.VarChar(60)
+  password_hash       String?   @db.VarChar(60)
+  profile_picture     String?
+  is_terminated       Boolean   @default(false)
+  is_verified         Boolean   @default(false)
+  user_type           Int
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @default(now()) @db.Timestamp(6)
+  refresh_tokens      String[]  @default([])
+  added_by            Int
+  updated_by_oprtator Int?
+  verfication_code    String?   @db.VarChar(10)
+  login_attempt       Int?      @default(0) @db.SmallInt
+  last_login_time     DateTime? @db.Timestamp(6)
+  last_active_time    DateTime? @db.Timestamp(6)
+  notes               notes[]
+}
+
+model roles {
+  id                                         Int        @id @default(autoincrement())
+  name                                       String     @db.VarChar(60)
+  enable_add_employees                       Boolean    @default(false)
+  enable_terminate_employees                 Boolean    @default(false)
+  enable_delete_employee                     Boolean    @default(false)
+  enable_create_pattern                      Boolean    @default(false)
+  enable_approve_absence                     Boolean    @default(false)
+  enable_add_manditory_leave                 Boolean    @default(false)
+  enable_add_lateness                        Boolean    @default(false)
+  enable_create_rotas                        Boolean    @default(false)
+  enable_view_employee_notifications         Boolean    @default(false)
+  enable_view_employee_payroll               Boolean    @default(false)
+  enable_view_employee_sensitive_information Boolean    @default(false)
+  created_at                                 DateTime   @default(now()) @db.Timestamp(6)
+  updated_at                                 DateTime   @default(now()) @db.Timestamp(6)
+  added_by                                   Int?
+  updated_by                                 Int?
+  company_id                                 Int?
+  companies                                  companies? @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                                      users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model terms {
+  id         Int        @id @default(autoincrement())
+  company_id Int?
+  term_name  String?    @db.VarChar(60)
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at DateTime?  @default(now()) @db.Timestamp(6)
+  added_by   Int
+  updated_by Int?
+  start_date DateTime   @db.Date
+  end_date   DateTime   @db.Date
+  companies  companies? @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_company")
+
+  @@unique([company_id, term_name], map: "unique_term_name_per_company")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                                            Int           @id @default(autoincrement())
+  first_name                                    String        @db.VarChar(20)
+  last_name                                     String        @db.VarChar(20)
+  title                                         String?       @db.VarChar(20)
+  email                                         String        @unique @db.VarChar(60)
+  password_hash                                 String?       @db.VarChar(60)
+  date_of_birth                                 DateTime?     @db.Date
+  annual_leave_start_date                       DateTime      @db.Date
+  profile_picture                               String?
+  is_terminated                                 Boolean       @default(false)
+  is_verified                                   Boolean       @default(false)
+  created_at                                    DateTime      @default(now()) @db.Timestamp(6)
+  updated_at                                    DateTime      @default(now()) @db.Timestamp(6)
+  refresh_tokens                                String[]      @default([])
+  ni_no                                         String?       @db.VarChar(60)
+  drivers_licence_number                        String?       @db.VarChar(60)
+  drivers_licence_expiration_date               DateTime?     @db.Date
+  passport_number                               String?       @db.VarChar(60)
+  passport_expiration_date                      DateTime?     @db.Date
+  enable_reminders                              Boolean       @default(false)
+  enable_birthday_reminder                      Boolean       @default(false)
+  enable_receive_requests                       Boolean       @default(false)
+  enable_receive_requests_from_my_department    Boolean       @default(false)
+  contracted_leave_start_date                   DateTime?     @db.Date
+  added_by_operator                             Int
+  added_by_user                                 Int
+  updated_by_operator                           Int?
+  updated_by_user                               Int?
+  verification_code                             String?       @db.VarChar(10)
+  login_attempt                                 Int?          @default(0) @db.SmallInt
+  last_login_time                               DateTime?     @db.Timestamp(6)
+  last_active_time                              DateTime?     @db.Timestamp(6)
+  user_type                                     Int
+  company_id                                    Int?
+  role_id                                       Int?
+  absences                                      absences[]
+  contracts                                     contracts[]
+  hierarchies_hierarchies_manager_idTousers     hierarchies[] @relation("hierarchies_manager_idTousers")
+  hierarchies_hierarchies_subordinate_idTousers hierarchies[] @relation("hierarchies_subordinate_idTousers")
+  companies                                     companies?    @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                                         roles?        @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model working_patterns {
+  id                   Int       @id @default(autoincrement())
+  pattern_name         String    @db.VarChar(60)
+  company_id           Int
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  added_by             Int
+  updated_by           Int?
+  monday_start_time    DateTime? @db.Time(6)
+  monday_end_time      DateTime? @db.Time(6)
+  tuesday_start_time   DateTime? @db.Time(6)
+  tuesday_end_time     DateTime? @db.Time(6)
+  wednesday_start_time DateTime? @db.Time(6)
+  wednesday_end_time   DateTime? @db.Time(6)
+  thursday_start_time  DateTime? @db.Time(6)
+  thursday_end_time    DateTime? @db.Time(6)
+  friday_start_time    DateTime? @db.Time(6)
+  friday_end_time      DateTime? @db.Time(6)
+  saturday_start_time  DateTime? @db.Time(6)
+  saturday_end_time    DateTime? @db.Time(6)
+  sunday_start_time    DateTime? @db.Time(6)
+  sunday_end_time      DateTime? @db.Time(6)
+  companies            companies @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_company")
+
+  @@unique([company_id, pattern_name], map: "unique_pattern_name_per_company")
+}
