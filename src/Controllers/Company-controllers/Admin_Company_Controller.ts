@@ -4,6 +4,7 @@ import { isAdmin } from '../../Middleware/authorization';
 import { IAuthenticatedOpRequest } from '../../Types/OperatorRequestType';
 import {
 	createCompany,
+	createDefaultRole,
 	getUserById,
 	updateUserVerificationToken,
 } from '../../Services/Company-services/admin_company_service';
@@ -24,6 +25,7 @@ adminCompanyRouter.post(
 		try {
 			const myId = req.userId!;
 			const company = await createCompany(req.body, myId);
+			await createDefaultRole(company.id);
 			console.log(company);
 			if (req.body.sendRegistration) {
 				const verificationCode = generateVerificationCode();

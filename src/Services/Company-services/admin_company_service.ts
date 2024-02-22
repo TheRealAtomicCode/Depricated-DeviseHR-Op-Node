@@ -93,6 +93,30 @@ export const createCompany = async (reqBody: IAddCompany, myId: number) => {
 	return company;
 };
 
+export const createDefaultRole = async (companyId: number) => {
+	try {
+		await prisma.roles.create({
+			data: {
+				name: 'Manager',
+				company_id: companyId,
+				enable_add_employees: true,
+				enable_add_lateness: true,
+				enable_add_manditory_leave: true,
+				enable_approve_absence: true,
+				enable_create_pattern: true,
+				enable_create_rotas: true,
+				enable_delete_employee: true,
+				enable_terminate_employees: true,
+				enable_view_employee_notifications: true,
+				enable_view_employee_payroll: true,
+				enable_view_employee_sensitive_information: true,
+			},
+		});
+	} catch (err: any) {
+		return err;
+	}
+};
+
 export const updateUserVerificationToken = async (
 	userId: number,
 	verificationCode: string
